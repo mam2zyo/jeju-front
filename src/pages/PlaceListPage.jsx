@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import Header from '../components/Header';
@@ -30,6 +30,8 @@ const styles = {
 
 function PlaceListPage() {
     const [places, setPlaces] = useState([]);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -51,24 +53,41 @@ function PlaceListPage() {
         fetchPlaces();
     }, []);
 
-    const fetchPlaces = async (title = '') => {
+    const fetchPlaces = useCallback(async (currentSearchTerm, pageToFetch) => {
         setLoading(true);
         setError(null);
         try {
-            const url = title ? '/api/places/search?title=${title}' : '/api/places';
+            const url = currentSearchTerm
+                ? `/api/places/search?title=${currentSearchTerm}&page=${pageToFetch}&size=10`
+                : `/api/places?page=${pageToFetch}&size=10`;
+
             const response = await api.get(url);
-            setPlaces(response.data);
+            const data = response.data;
+
+            setPlaces(prevPlaces =>
+                pageToFetch === 0 ? data.content : [...prevPlaces, ...data.content]);
+            setHasMore(!data.last);
+            setPage(pageToFetch);
         } catch (err) {
             setError('장소 목록을 불러오는 데 실패했습니다.');
-            console.error(err);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchPlaces(searchTerm, 0);
+    }, []);
 
     const handleSearch = (e) => {
         e.preventDefault();
-        fetchPlaces(serchTerm);
+        setPlaces([]);
+        setPage(0);
+        fetchPlaces(searchTerm, 0);
+    };
+
+    const loadMore = () => {
+        fetchPlaces(searchTerm, page + 1);
     };
 
     if (!user) {
@@ -90,21 +109,25 @@ function PlaceListPage() {
                     <button type="submit" style={styles.searchButton}>검색</button>
                 </form>
 
-                {loading && <div style={styles.loading}>로딩 중...</div>}
+                {places.length === 0 && loading && <div style={styles.loading}>로딩 중...</div>}
                 {error && <div style={styles.error}>{error}</div>}
 
-                {!loading && !error && (
-                    <div styles={styles.placeList}>
-                        {places.map(place => (
-                            <Link to={`/places/${place.id}`} key={place.id} style={styles.placeCard}>
-                                <img src={place.thumbnailPath} alt={place.title} style={styles.thumbnail} />
-                                <div style={styles.cardContent}>
-                                    <h3 style={styles.cardTitle}>{place.title}</h3>
-                                    <p style={styles.cardAddress}>{place.address}</p>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                <div styles={styles.placeList}>
+                    {places.map(place => (
+                        <Link to={`/places/${place.id}`} key={place.id} style={styles.placeCard}>
+                            <img src={place.thumbnailPath} alt={place.title} style={styles.thumbnail} />
+                            <div style={styles.cardContent}>
+                                <h3 style={styles.cardTitle}>{place.title}</h3>
+                                <p style={styles.cardAddress}>{place.address}</p>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+
+                {hasMore && (
+                    <button onClick={loadMore} disabled={loading} style={styles.loadMoreButton}>
+                        {loading ? '로딩 중...' : '더보기'}
+                    </button>
                 )}
             </main>
         </div>

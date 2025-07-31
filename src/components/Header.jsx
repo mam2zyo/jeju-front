@@ -54,7 +54,7 @@ function Header({ user, onLogout }) {
             <Link to='/places' style={styles.logo}>JeJu Trip</Link>
             {user && (
                 <nav style={styles.nav}>
-                    <span style={styles.welcome}>{user}님</span>
+                    <span style={styles.welcome}>{user}</span>
                     <button onClick={handleLogout} style={styles.logoutButton}>로그아웃</button>
                 </nav>
             )}

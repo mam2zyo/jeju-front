@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import Header from '../components/Header';
 
-const StartRating = ({ rating }) => {
+const StarRating = ({ rating }) => {
     return (
         <div>
             {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
@@ -23,16 +23,84 @@ const styles = {
     introduction: { fontSize: '1rem', lineHeight: '1.6', marginBottom: '2rem' },
     reviewsSection: { marginTop: '3rem' },
     reviewsTitle: { fontSize: '1.8rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem', marginBottom: '1.5rem' },
-    reviewCard: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', marginBottom: '1rem' },
-    reviewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' },
-    reviewer: { fontWeight: 'bold' },
+    reviewCard: {
+        backgroundColor: 'white',
+        padding: '1.5rem',
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+        marginBottom: '1rem'
+    },
+    reviewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' },    
+    reviewer: { fontWeight: 'bold', color: '#333' },
     reviewDate: { fontSize: '0.8rem', color: '#888' },
-    reviewContent: { fontSize: '1rem' },
+    reviewContent: { fontSize: '1rem', color: '#444', marginTop: '0.75rem' },
+    starRating: {  color: '#f8d22f', marginBottom: '0.5rem' }
+};
+
+const ReviewForm = ({ placeId, onReviewSubmit }) => {
+    const [rating, setRating] = useState(5);
+    const [content, setContent] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (content.trim() === '') {
+            setError('리뷰 내용을 입력해 주세요.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError('');
+
+        try {
+            const response = await api.post(`/api/places/${placeId}/reviews`, { rating, content });
+            onReviewSubmit(response.data);
+            setContent('');
+            setRating(5);
+        } catch (err) {
+            setError('리뷰 작성에 실패했습니다. 잠시 후 다시 시도해주세요');
+            console.error('Review submission failed', err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const formStyles = {
+        form: { display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.5rem', backgroundColor: '#f9f9f9', borderRadius: '8px', marginBottom: '2rem' },
+        ratingContainer: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+        textarea: { padding: '1rem', borderRadius: '8px', border: '1px solid #ddd', minHeight: '100px', resize: 'vertical' },
+        button: { padding: '0.75rem', borderRadius: '8px', border: 'none', backgroundColor: '#FF7F50', color: 'white', fontWeight: 'bold', cursor: 'pointer' },
+        error: { color: 'red', fontSize: '0.9rem' }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} style={formStyles.form}>
+            <div style={formStyles.ratingContainer}>
+                <label htmlFor='rating'>평점:</label>
+                <select id="rating" value={rating} onChange={(e) => setRating(Number(e.target.value))}>
+                    <option value={5}>★★★★★</option>
+                    <option value={4}>★★★★☆</option>
+                    <option value={3}>★★★☆☆</option>
+                    <option value={2}>★★☆☆☆</option>
+                    <option value={1}>★☆☆☆☆</option>
+                </select>
+            </div>
+            <textarea
+                placeholder='리뷰를 남겨주세요.'
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                style={formStyles.textarea} />
+            <button type='submit' disabled={isSubmitting} style={formStyles.button}>
+                {isSubmitting ? '등록 중...' : '리뷰 등록'}
+            </button>
+            {error && <p style={formStyles.error}>{error}</p>}
+        </form>
+    );
 };
 
 function PlaceDetailPage() {
     const { id } = useParams();
-    console.log('URL 파라미터에서 가져온  id:', id);
     const [place, setPlace] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -67,6 +135,13 @@ function PlaceDetailPage() {
         return isUpdated ? `${formattedDate} (수정됨)` : formattedDate;
     };
 
+    const handleReviewSubmitted = (newReview) => {
+        setPlace(prevPlace => ({
+            ...prevPlace,
+            review: [newReview, ...prevPlace.reviews]
+        }));
+    };
+
     if (loading) return <div style={styles.loading}>로딩 중...</div>;
     if (error) return <div style={styles.error}>{error}</div>;
     if (!place) return <div style={styles.error}>장소 정보를 찾을 수 없습니다.</div>;
@@ -89,6 +164,7 @@ function PlaceDetailPage() {
 
                 <section style={styles.reviewsSection}>
                     <h2 style={styles.reviewsTitle}>리뷰 ({place.reviews.length})</h2>
+                    <ReviewForm placeId={id} onReviewSubmit={handleReviewSubmitted} />
                     {place.reviews.length > 0 ? (
                         <div>
                             {place.reviews.map(review => (
@@ -97,7 +173,7 @@ function PlaceDetailPage() {
                                         <span style={styles.reviewer}>{review.reviewer}</span>
                                         <span style={styles.reviewDate}>{formatDateTime(review.createdAt, review.updatedAt)}</span>
                                     </div>
-                                    <StartRating rating={review.rating} />
+                                    <StarRating rating={review.rating} />
                                     <p style={styles.reviewContent}>{review.content}</p>
                                 </div>
                             ))}
