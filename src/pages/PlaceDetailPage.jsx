@@ -5,7 +5,7 @@ import Header from '../components/Header';
 
 const StarRating = ({ rating }) => {
     return (
-        <div>
+        <div style={styles.starRating}>
             {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
         </div>
     );
