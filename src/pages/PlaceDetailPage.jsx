@@ -2,14 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import Header from '../components/Header';
-
-const StarRating = ({ rating }) => {
-    return (
-        <div style={styles.starRating}>
-            {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
-        </div>
-    );
-};
+import ReviewCard from '../components/ReviewCard';
 
 const styles = {
     loading: { textAlign: 'center', padding: '2rem', fontSize: '1.2rem' },
@@ -22,19 +15,7 @@ const styles = {
     address: { fontSize: '1.1rem', color: '#555', margin: '0 0 1rem' },
     introduction: { fontSize: '1rem', lineHeight: '1.6', marginBottom: '2rem' },
     reviewsSection: { marginTop: '3rem' },
-    reviewsTitle: { fontSize: '1.8rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem', marginBottom: '1.5rem' },
-    reviewCard: {
-        backgroundColor: 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-        marginBottom: '1rem'
-    },
-    reviewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' },    
-    reviewer: { fontWeight: 'bold', color: '#333' },
-    reviewDate: { fontSize: '0.8rem', color: '#888' },
-    reviewContent: { fontSize: '1rem', color: '#444', marginTop: '0.75rem' },
-    starRating: {  color: '#f8d22f', marginBottom: '0.5rem' }
+    reviewsTitle: { fontSize: '1.8rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem', marginBottom: '1.5rem' },    
 };
 
 const ReviewForm = ({ placeId, onReviewSubmit }) => {
@@ -124,21 +105,27 @@ function PlaceDetailPage() {
         checkLoginAndFetchData();
     }, [id]);
 
-    const formatDateTime = (createdAt, updatedAt) => {
-        const isUpdated = new Date(updatedAt).getTime() - new Date(createdAt).getTime > 1000;
-
-        const dataToShow = isUpdated ? updatedAt : createdAt;
-        const date = new Date(dataToShow);
-        const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}
-        .${String(date.getDate()).padStart(2, '0')}`;
-
-        return isUpdated ? `${formattedDate} (수정됨)` : formattedDate;
-    };
-
     const handleReviewSubmitted = (newReview) => {
         setPlace(prevPlace => ({
             ...prevPlace,
-            review: [newReview, ...prevPlace.reviews]
+            reviews: [newReview, ...prevPlace.reviews]
+        }));
+    };
+
+    const handleReviewUpdated = (updatedReview) => {
+        setPlace(prevPlace => ({
+            ...prevPlace,
+            reviews: prevPlace.reviews.map(review =>
+                review.id === updatedReview.id ? updatedReview : review
+            ),
+        }));
+    };
+
+    const handleReviewDeleted = (deletedReviewId) => {
+        setPlace(prevPlace => ({
+            ...prevPlace,
+            reviews: prevPlace.reviews.filter(review => 
+                review.id !== deletedReviewId),
         }));
     };
 
@@ -168,14 +155,14 @@ function PlaceDetailPage() {
                     {place.reviews.length > 0 ? (
                         <div>
                             {place.reviews.map(review => (
-                                <div key={review.id} style={styles.reviewCard}>
-                                    <div style={styles.reviewHeader}>
-                                        <span style={styles.reviewer}>{review.reviewer}</span>
-                                        <span style={styles.reviewDate}>{formatDateTime(review.createdAt, review.updatedAt)}</span>
-                                    </div>
-                                    <StarRating rating={review.rating} />
-                                    <p style={styles.reviewContent}>{review.content}</p>
-                                </div>
+                                <ReviewCard
+                                key={review.id}
+                                review={review}
+                                currentUserEmail={user}
+                                placeId={id}
+                                onUpdate={handleReviewUpdated}
+                                onDelete={handleReviewDeleted}
+                                />
                             ))}
                         </div>
                     ) : (
