@@ -6,6 +6,7 @@ import api from '../api';
 // 헤더와 리뷰 카드 컴포넌트를 가져옵니다.
 import Header from '../components/Header';
 import ReviewCard from '../components/ReviewCard';
+import { FiPhone } from 'react-icons/fi';
 
 // 컴포넌트에 사용될 스타일을 정의합니다.
 const styles = {
@@ -19,7 +20,10 @@ const styles = {
     address: { fontSize: '1.1rem', color: '#555', margin: '0 0 1rem' },
     introduction: { fontSize: '1rem', lineHeight: '1.6', marginBottom: '2rem' },
     reviewsSection: { marginTop: '3rem' },
-    reviewsTitle: { fontSize: '1.8rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem', marginBottom: '1.5rem' },    
+    reviewsTitle: { fontSize: '1.8rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem', marginBottom: '1.5rem' },
+    infoSection: { display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1.5rem' },
+    infoItem: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+    phoneLink: { color: '#007bff', textDecoration: 'none' },
 };
 
 // 리뷰 작성 폼 컴포넌트입니다.
@@ -145,7 +149,7 @@ function PlaceDetailPage() {
     const handleReviewDeleted = (deletedReviewId) => {
         setPlace(prevPlace => ({
             ...prevPlace,
-            reviews: prevPlace.reviews.filter(review => 
+            reviews: prevPlace.reviews.filter(review =>
                 review.id !== deletedReviewId // 삭제된 리뷰를 목록에서 제거합니다.
             ),
         }));
@@ -171,6 +175,21 @@ function PlaceDetailPage() {
                     <p style={styles.address}>{place.address}</p>
                 </header>
 
+                <section style={styles.infoSection}>
+                    {/* <div style={styles.infoItem}>
+                        <span>주소: </span>
+                        <p style={styles.address}>{place.address}</p>
+                    </div> */}
+                    {place.phoneNumber && (
+                        <div style={styles.infoItem}>
+                            <FiPhone />
+                            <a href={`tel:${place.phoneNumber}`} style={styles.phoneLink}>
+                                {place.phoneNumber}
+                            </a>
+                        </div>
+                    )}
+                </section>
+
                 <section>
                     <p style={styles.introduction}>{place.introduction}</p>
                 </section>
@@ -184,12 +203,12 @@ function PlaceDetailPage() {
                         <div>
                             {place.reviews.map(review => (
                                 <ReviewCard
-                                key={review.id}
-                                review={review}
-                                currentUserEmail={user}
-                                placeId={id}
-                                onUpdate={handleReviewUpdated}
-                                onDelete={handleReviewDeleted}
+                                    key={review.id}
+                                    review={review}
+                                    currentUserEmail={user}
+                                    placeId={id}
+                                    onUpdate={handleReviewUpdated}
+                                    onDelete={handleReviewDeleted}
                                 />
                             ))}
                         </div>
