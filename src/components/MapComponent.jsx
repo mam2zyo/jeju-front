@@ -1,15 +1,24 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Map, MapMarker } from 'react-kakao-maps-sdk';
 
 const { kakao } = window;
 
 function MapComponent({ latitude, longitude, title }) {
 
+    const [isMapReady, setIsMapReady] = useState(false);
+
     useEffect(() => {
-        kakao.maps.load(() => {
-            // 
-        });
+
+        if (window.kakao && window.kakao.maps) {
+            kakao.maps.load(() => {
+               setIsMapReady(true);
+            });
+        }        
     }, []);
+
+    if (!isMapReady) {
+        return <div>지도 로딩 중...</div>
+    }
 
     return (
         <Map

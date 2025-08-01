@@ -7,6 +7,7 @@ import api from '../api';
 import Header from '../components/Header';
 import ReviewCard from '../components/ReviewCard';
 import { FiPhone } from 'react-icons/fi';
+import MapComponent from '../components/MapComponent';
 
 // 컴포넌트에 사용될 스타일을 정의합니다.
 const styles = {
@@ -193,6 +194,16 @@ function PlaceDetailPage() {
                 <section>
                     <p style={styles.introduction}>{place.introduction}</p>
                 </section>
+
+                {place.latitude && place.longitude && (
+                    <section style={{ marginTop: '2rem' }}>
+                        <MapComponent
+                            latitude={place.latitude}
+                            longitude={place.longitude}
+                            title={place.title}
+                        />
+                    </section>
+                )}
 
                 <section style={styles.reviewsSection}>
                     <h2 style={styles.reviewsTitle}>리뷰 ({place.reviews.length})</h2>
