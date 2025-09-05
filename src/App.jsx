@@ -6,7 +6,6 @@ import PlaceListPage from './pages/PlaceListPage';
 import OAuthRedirectionPage from './pages/OAuthRedirectionPage.jsx';
 import PlaceDetailPage from './pages/PlaceDetailPage.jsx';
 
-// 애플리케이션의 메인 컴포넌트입니다. 라우팅을 설정하는 역할을 합니다.
 function App() {
   return (
     // BrowserRouter를 사용하여 브라우저의 주소 변경을 감지하고, 그에 맞는 페이지를 보여줍니다.
